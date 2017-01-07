@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title></title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/4.1.0/sanitize.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" integrity="sha256-NuCn4IvuZXdBaFKJOAcsU2Q3ZpwbdFisd5dux4jkQ5w=" crossorigin="anonymous" />
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      font-size: 16px;
+    }
+
+    .Container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    .Caption {
+      font-size: 1.2rem;
+      color: #666;
+      margin: 8px 16px;
+    }
+
+    .ConnectedWebmoList {
+      flex: 1 1 auto;
+      list-style: none;
+      margin: 8px 16px;
+      padding: 0;
+    }
+
+    .ConnectedWebmoList__item {
+      padding: 8px 0;
+      background-color: transparent;
+    }
+
+    .ConnectedWebmoList__item:hover {
+      background-color: #eee;
+    }
+
+    .ConnectedWebmoList__item:not(:first-child) {
+      border-top: 1px solid #ccc;
+    }
+
+    .ConnectWebmoForm {
+      flex: 0 0 auto;
+      display: flex;
+      padding: 16px;
+    }
+
+    .ConnectWebmoForm__input-name {
+      flex: 1 1 auto;
+      padding: 4px;
+      border-bottom: 1px solid #ccc;
+      margin-right: 16px;
+      transition: all .3s;
+    }
+
+    .ConnectWebmoForm__input-name:focus {
+      outline: none;
+      border-bottom: 1px solid #7ab672;
+    }
+
+    .ConnectWebmoForm__button-submit {
+      flex: 0 0 auto;
+      border: 1px solid #7ab672;
+      border-radius: 4px;
+      padding: 8px 16px;
+      background-color: transparent;
+      transition: all .3s;
+    }
+
+    .ConnectWebmoForm__button-submit:focus {
+      outline: none;
+    }
+
+    .ConnectWebmoForm__button-submit:hover {
+      outline: none;
+      background-color: #7ab672;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <main class="Container">
+    <h2 class="Caption">Connected Webmo</h2>
+    <ul id="ConnectedWebmoList" class="ConnectedWebmoList">
+    </ul>
+
+    <form id="ConnectWebmoForm" class="ConnectWebmoForm">
+      <input type="text" class="ConnectWebmoForm__input-name" placeholder="Connect to new Webmo">
+      <input type="submit" class="ConnectWebmoForm__button-submit" value="Connect">
+    </form>
+  </main>
+
+  <script src="//cdn.rawgit.com/cidreixd/webmo-library-javascript/master/dist/webmo.min.js"></script>
+  <script>
+    class WebmoWrapper {
+      constructor(hostname) {
+        this.hostname = hostname
+        this.rotating = false
+      }
+
+      connect(onopen, onerror, onclose) {
+        this.webmo = new Webmo.ws(this.hostname)
+        this.webmo.onopen = onopen
+        this.webmo.onclose = onclose
+        this.webmo.onerror = onerror
+      }
+
+      isRotating() {
+        return this.rotating
+      }
+
+      rotate(dps) {
+        this.webmo.rotate(dps)
+        this.rotating = true
+      }
+
+      stop() {
+        this.webmo.stop()
+        this.rotating = false
+      }
+    }
+
+    const connectedWebmoList = {}
+
+    function connect(hostname) {
+      if (connectedWebmoList[hostname] != null) {
+        return
+      }
+      const webmo = new WebmoWrapper(hostname)
+      insertToConnectedWebmoList(hostname)
+      webmo.connect(
+        () => {
+          console.log('Establish connection to ', hostname)
+          insertButtonToConnectedWebmoListItem(hostname)
+          connectedWebmoList[hostname] = webmo
+        },
+        () => {
+          if (connectedWebmoList[hostname] == null) {
+            console.log('Fail to connect to ' + hostname)
+          }
+        },
+        () => {
+          console.log('Disconnect ' + hostname)
+          removeFromConnectedWebmoList(hostname)
+          if (connectedWebmoList[hostname] != null) {
+            delete connectedWebmoList[hostname]
+          }
+        }
+      )
+    }
+
+    function insertToConnectedWebmoList(hostname) {
+      const i = document.createElement('i')
+      i.classList.add('fa')
+      i.classList.add('fa-spinner')
+      i.classList.add('fa-pulse')
+
+      const msg = document.createElement('span')
+      msg.textContent = ' Connecting to ' + hostname + '...'
+
+      const li = document.createElement('li')
+      li.classList.add('ConnectedWebmoList__item')
+      li.setAttribute('data-hostname', hostname)
+      li.appendChild(i)
+      li.appendChild(msg)
+
+      document.querySelector('#ConnectedWebmoList').appendChild(li)
+    }
+
+    function insertButtonToConnectedWebmoListItem(hostname) {
+      const btn = document.createElement('button')
+      btn.classList.add('ConnectedWebmoList__button-rotate')
+      btn.textContent = 'rotate ' + hostname
+      btn.addEventListener('click', (e) => {
+        e.preventDefault()
+        toggleRotating(hostname)
+      })
+      const li = document.querySelector('[data-hostname="' + hostname + '"]')
+      li.textContent = ''
+      li.appendChild(btn)
+    }
+
+    function removeFromConnectedWebmoList(hostname) {
+      const li = document.querySelector('[data-hostname="' + hostname + '"]')
+      document.querySelector('#ConnectedWebmoList').removeChild(li)
+    }
+
+    function toggleRotating(hostname, dps) {
+      const webmo = connectedWebmoList[hostname]
+      const btn = document.querySelector('[data-hostname="' + hostname + '"] .ConnectedWebmoList__button-rotate')
+      if (webmo.isRotating()) {
+        webmo.stop()
+        btn.textContent = 'rotate ' + hostname
+      } else {
+        webmo.rotate(90)
+        btn.textContent = 'stop ' + hostname
+      }
+    }
+
+
+    window.addEventListener('DOMContentLoaded', (e) => {
+      const form = document.querySelector('#ConnectWebmoForm')
+      const submitConnectWebmoForm = (e) => {
+        e.preventDefault()
+        const input = form.querySelector('.ConnectWebmoForm__input-name')
+        connect(input.value)
+        form.reset()
+      }
+      form.addEventListener('submit', submitConnectWebmoForm)
+      form.querySelector('input[type=submit]').addEventListener('click', submitConnectWebmoForm)
+    })
+  </script>
+</body>
+</html>
