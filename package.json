@@ -1,0 +1,34 @@
+{
+  "name": "webmo-samples",
+  "description": "Sample scripts for Webmo",
+  "version": "0.1.0",
+  "author": {
+    "name": "Masayuki IZUMI",
+    "email": "masayuki@izumin.info",
+    "url": "https://github.com/izumin5210"
+  },
+  "bugs": {
+    "url": "https://github.com/izumin5210/webmo-samples/issues"
+  },
+  "homepage": "https://github.com/izumin5210/webmo-samples#readme",
+  "keywords": [
+    "webmo"
+  ],
+  "license": {
+    "type": "MIT",
+    "url": "http://izumin.mit-license.org/2015"
+  },
+  "main": "index.js",
+  "private": "true",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/izumin5210/webmo-samples.git"
+  },
+  "scripts": {
+    "start": "http-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "http-server": "^0.9.0"
+  }
+}
